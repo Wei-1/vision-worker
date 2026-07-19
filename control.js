@@ -1,4 +1,5 @@
 const canvasElement = document.getElementById('theCanvas');
+const selectElement = document.getElementById('theSelect');
 const canvasCtx = canvasElement.getContext('2d');
 
 let width = window.innerWidth
@@ -23,8 +24,8 @@ function removeElements(landmarks, elements){
 }
 
 function removeLandmarks(results){
-    if(results.poseLandmarks){
-        removeElements(results.poseLandmarks,
+    if(results.poseLandmarks && results.poseLandmarks.length > 0){
+        removeElements(results.poseLandmarks[0],
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 16, 17, 18, 19, 20, 21, 22, 23]);
     }
 }
@@ -93,19 +94,29 @@ function onResults(results){
     theResults = results;
 }
 var cCount = 0;
-let worker = new Worker("worker.js?a=10");
+let worker = new Worker("worker.js?a=8");
 worker.onmessage = function(e){
+    if(cCount == 0){
+        console.log("First Result", e);
+    }
     if(e.data){
         onResults(e.data);
     }
     cCount += 1;
-    worker.postMessage(getCaptureFrame());
+    worker.postMessage({
+        "model": selectElement.value,
+        "frame": getCaptureFrame()
+    });
 };
 
 var lCount = 0;
 async function theLoop(){
     if(videoElement && lCount == 0){
-        worker.postMessage(getCaptureFrame());
+        worker.postMessage({
+            "model": selectElement.value,
+            "frame": getCaptureFrame()
+        });
+        console.log("First Trigger");
     }
     lCount += 1;
 
@@ -137,7 +148,7 @@ async function theLoop(){
                 connect(p1, p2);
             }
         }
-        if(theResults.leftHandLandmarks && theResults.leftHandLandmarks.length > 0){
+        if(theResults.rightHandLandmarks && theResults.rightHandLandmarks.length > 0){
             canvasCtx.strokeStyle = "#00CC00";
             for(i in HAND_CONNECTIONS){
                 let ll = HAND_CONNECTIONS[i];
